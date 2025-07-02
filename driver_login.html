@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>دخول السائق - e-SchoolBUS</title>
+  <style>
+    body {
+      background: #f2f4f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    .login-card {
+      background-color: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-card h2 {
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      text-align: right;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .form-group input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background-color: #000;
+      color: #fff;
+      padding: 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .submit-btn:hover {
+      background-color: #343434;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 15px;
+      min-height: 20px;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .back-link {
+      display: block;
+      text-align: center;
+      margin-top: 20px;
+      color: #3498db;
+      text-decoration: none;
+      font-size: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h2>دخول السائق</h2>
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="nationalId">الرقم الوطني</label>
+        <input type="text" id="nationalId" name="nationalId" placeholder="أدخل الرقم الوطني" required />
+      </div>
+      <button type="submit" class="submit-btn">دخول</button>
+    </form>
+    <div class="message" id="statusMessage"></div>
+    <a href="index.html" class="back-link">العودة إلى الصفحة الرئيسية</a>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDAoCWtKcPku4TDq5X0SAGvIFa5yfuSr6E",
+      authDomain: "e-shoolbus.firebaseapp.com",
+      projectId: "e-shoolbus",
+      storageBucket: "e-shoolbus.appspot.com",
+      messagingSenderId: "43076546094",
+      appId: "1:43076546094:web:db511e862a586af23979bf"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const nationalId = document.getElementById('nationalId').value.trim();
+      const messageDiv = document.getElementById('statusMessage');
+      messageDiv.textContent = '';
+      messageDiv.className = 'message';
+
+      if (!nationalId) {
+        messageDiv.textContent = "يرجى إدخال الرقم الوطني.";
+        messageDiv.classList.add("error");
+        return;
+      }
+
+      try {
+        const busesRef = collection(db, "schools", "School1", "buses");
+        const snapshot = await getDocs(busesRef);
+
+        let found = false;
+
+        snapshot.forEach(doc => {
+          const data = doc.data();
+          if (data.driverId?.replace(/\s/g, '') === nationalId.replace(/\s/g, '')) {
+            found = true;
+
+            // حفظ بيانات السائق
+            localStorage.setItem("driverId", data.driverId);
+            localStorage.setItem("busNumber", data.busNumber || doc.id);
+            localStorage.setItem("driverName", data.driverName || "");
+
+            messageDiv.textContent = "تم تسجيل الدخول بنجاح!";
+            messageDiv.classList.add("success");
+
+            setTimeout(() => {
+              window.location.href = "driver_dashboard.html";
+            }, 1000);
+          }
+        });
+
+        if (!found) {
+          messageDiv.textContent = "الرقم الوطني غير مسجل كسائق.";
+          messageDiv.classList.add("error");
+        }
+
+      } catch (error) {
+        console.error("خطأ في تسجيل الدخول:", error);
+        messageDiv.textContent = "حدث خطأ أثناء محاولة تسجيل الدخول.";
+        messageDiv.classList.add("error");
+      }
+    });
+  </script>
+</body>
+</html>

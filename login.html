@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>تسجيل الدخول - e-SchoolBUS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: #f2f4f7;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .login-card {
+      background-color: white;
+      padding: 40px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    .login-card h2 {
+      color: #2c3e50;
+      margin-bottom: 30px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+      text-align: right;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #2c3e50;
+    }
+
+    .form-group input {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      font-size: 15px;
+    }
+
+    .remember-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background-color: #000;
+      color: #fff;
+      padding: 14px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .submit-btn:hover {
+      background-color: #343434;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 15px;
+      min-height: 20px;
+    }
+
+    .success {
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+
+    .back-link, .register-link, .clear-btn {
+      display: block;
+      text-align: center;
+      margin-top: 15px;
+      color: #3498db;
+      text-decoration: none;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .clear-btn {
+      color: red;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="login-card">
+    <h2>تسجيل الدخول</h2>
+
+    <form id="loginForm">
+      <div class="form-group">
+        <label for="email">البريد الإلكتروني</label>
+        <input type="email" id="email" name="email" placeholder="أدخل البريد الإلكتروني" required />
+      </div>
+
+      <div class="form-group">
+        <label for="password">كلمة المرور</label>
+        <input type="password" id="password" name="password" placeholder="أدخل كلمة المرور" required />
+      </div>
+
+      <div class="remember-row">
+        <label><input type="checkbox" id="rememberMe" /> تذكرني</label>
+        <span class="clear-btn" onclick="clearSavedEmail()">حذف البيانات</span>
+      </div>
+
+      <button type="submit" class="submit-btn">دخول</button>
+    </form>
+
+    <div class="message" id="statusMessage"></div>
+
+    <a href="index.html" class="back-link">العودة إلى الصفحة الرئيسية</a>
+    <a href="register.html" class="register-link">ليس لديك حساب؟ سجل الآن</a>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    // Import the functions you need from the SDKs
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js ";
+    import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js ";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js ";
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyDAoCWtKcPku4TDq5X0SAGvIFa5yfuSr6E",
+      authDomain: "e-shoolbus.firebaseapp.com",
+      projectId: "e-shoolbus",
+      storageBucket: "e-shoolbus.appspot.com",
+      messagingSenderId: "43076546094",
+      appId: "1:43076546094:web:db511e862a586af23979bf"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // Load saved email if exists
+    window.onload = () => {
+      const savedEmail = localStorage.getItem("rememberedEmail");
+      if (savedEmail) {
+        document.getElementById("email").value = savedEmail;
+        document.getElementById("rememberMe").checked = true;
+      }
+    };
+
+    // Handle form submission
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+      const remember = document.getElementById('rememberMe').checked;
+      const messageDiv = document.getElementById('statusMessage');
+
+      if (!email || !password) {
+        messageDiv.textContent = "يرجى إدخال البريد وكلمة المرور.";
+        messageDiv.className = "message error";
+        return;
+      }
+
+      // Firebase Authentication Sign In
+      signInWithEmailAndPassword(auth, email, password)
+        .then(async userCredential => {
+          const user = userCredential.user;
+
+          // حفظ البريد إذا تم تحديد "تذكرني"
+          if (remember) {
+            localStorage.setItem("rememberedEmail", email);
+          } else {
+            localStorage.removeItem("rememberedEmail");
+          }
+
+          // جلب بيانات المستخدم من Cloud Firestore
+          const userDocRef = doc(db, "users", user.uid);
+          try {
+            const userDocSnap = await getDoc(userDocRef);
+
+            if (!userDocSnap.exists()) {
+              messageDiv.textContent = "لا توجد بيانات مرتبطة بهذا الحساب.";
+              messageDiv.className = "message error";
+              return;
+            }
+
+            const userData = userDocSnap.data();
+
+            // التوجيه حسب نوع الحساب
+            if (userData.role === "school") {
+              messageDiv.textContent = "جاري التوجيه إلى لوحة المدرسة...";
+              messageDiv.className = "message success";
+              setTimeout(() => {
+                window.location.href = "school_dashboard.html";
+              }, 1000);
+            } else if (userData.role === "parent") {
+              messageDiv.textContent = "جاري التوجيه إلى صفحة الولي...";
+              messageDiv.className = "message success";
+              setTimeout(() => {
+                window.location.href = "parent_dashboard.html";
+              }, 1000);
+            } else {
+              messageDiv.textContent = "نوع الحساب غير مدعوم.";
+              messageDiv.className = "message error";
+            }
+
+          } catch (error) {
+            console.error("Error fetching user data:", error);
+            messageDiv.textContent = "فشل في جلب بيانات المستخدم.";
+            messageDiv.className = "message error";
+          }
+
+        })
+        .catch(error => {
+          console.error("Authentication Error:", error.code, error.message);
+          messageDiv.textContent = "البريد أو كلمة المرور غير صحيحة.";
+          messageDiv.className = "message error";
+        });
+    });
+
+    // Function to clear saved email
+    function clearSavedEmail() {
+      localStorage.removeItem("rememberedEmail");
+      document.getElementById("email").value = "";
+      alert("تم حذف البريد المحفوظ!");
+    }
+
+    // Make function accessible globally
+    window.clearSavedEmail = clearSavedEmail;
+  </script>
+
+</body>
+</html>
